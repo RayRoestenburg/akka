@@ -1,18 +1,12 @@
 /*
- * Copyright (C) 2014-2018 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2018 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.stream.scaladsl
 
-import akka.stream.ActorAttributes._
-import akka.stream.Supervision._
-import akka.stream.testkit.Utils.TE
 import akka.stream.testkit.scaladsl.TestSink
-
-import java.util.concurrent.ThreadLocalRandom.{ current ⇒ random }
-
 import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
-import akka.stream.testkit.{ StreamSpec, ScriptedTest }
+import akka.stream.testkit.StreamSpec
 
 case class Message(data: String, offset: Long)
 
@@ -23,50 +17,86 @@ class SourceWithContextSpec extends StreamSpec {
 
   "A SourceWithContext" must {
 
-    "provide a one-to-one context when map is used" in {
-      Source(Vector(Message("a", 1L)))
-        .withContext
-        .map(_.data)
-        .mapContext(_.offset)
-        .map(_.toLowerCase)
-        .provideContext
-        .runWith(TestSink.probe[(String, Op[Long])])
+    "get created from Source.startContextPropagation" in {
+      val msg = Message("a", 1L)
+      Source(Vector(msg))
+        .startContextPropagation(_.offset)
+        .endContextPropagation
+        .runWith(TestSink.probe[(Message, Long)])
         .request(1)
-        .expectNext(("a", OneToOne(1L)))
+        .expectNext((msg, 1L))
         .expectComplete()
-
     }
 
-    "provide a one-to-one context via a FlowWithContext" in {
+    "be able to get turned back into a normal Source" in {
+      val msg = Message("a", 1L)
+      Source(Vector(msg))
+        .startContextPropagation(_.offset)
+        .map(_.data)
+        .endContextPropagation.map { case (e, _) ⇒ e }
+        .runWith(TestSink.probe[String])
+        .request(1)
+        .expectNext("a")
+        .expectComplete()
+    }
+
+    "pass through contexts using map and filter" in {
+      Source(
+        Vector(Message("A", 1L), Message("B", 2L), Message("D", 3L), Message("C", 4L))
+      )
+        .startContextPropagation(_.offset)
+        .map(_.data.toLowerCase)
+        .filter(_ != "b")
+        .filterNot(_ == "d")
+        .endContextPropagation
+        .runWith(TestSink.probe[(String, Long)])
+        .request(2)
+        .expectNext(("a", 1L))
+        .expectNext(("c", 4L))
+        .expectComplete()
+    }
+
+    "pass through contexts via a FlowWithContext" in {
 
       def flowWithContext[T] = FlowWithContext[Long, T]
 
       Source(Vector(Message("a", 1L)))
-        .withContext
+        .startContextPropagation(_.offset)
         .map(_.data)
-        .mapContext(_.offset)
-        .via(flowWithContext.map { s ⇒
-          s + "b"
-        })
-        .provideContext
-        .runWith(TestSink.probe[(String, Op[Long])])
+        .via(flowWithContext.map(s ⇒ s + "b"))
+        .endContextPropagation
+        .runWith(TestSink.probe[(String, Long)])
         .request(1)
-        .expectNext(("ab", OneToOne(1L)))
+        .expectNext(("ab", 1L))
         .expectComplete()
     }
 
-    "provide a one-to-many context via mapConcat" in {
+    "pass through contexts via mapConcat" in {
       Source(Vector(Message("a", 1L)))
-        .withContext
+        .startContextPropagation(_.offset)
         .map(_.data)
-        .mapContext(_.offset)
         .mapConcat { str ⇒
           List(1, 2, 3).map(i ⇒ s"$str-$i")
         }
-        .provideContext
-        .runWith(TestSink.probe[(String, Op[Long])])
+        .endContextPropagation
+        .runWith(TestSink.probe[(String, Long)])
         .request(3)
-        .expectNext(("a-1", OneToMany(1L)), ("a-2", OneToMany(1L)), ("a-3", OneToMany(1L)))
+        .expectNext(("a-1", 1L), ("a-2", 1L), ("a-3", 1L))
+        .expectComplete()
+    }
+
+    "pass through a sequence of contexts per element via grouped" in {
+      Source(Vector(Message("a", 1L)))
+        .startContextPropagation(_.offset)
+        .map(_.data)
+        .mapConcat { str ⇒
+          List(1, 2, 3, 4).map(i ⇒ s"$str-$i")
+        }
+        .grouped(2)
+        .endContextPropagation
+        .runWith(TestSink.probe[(Seq[String], Seq[Long])])
+        .request(2)
+        .expectNext((Seq("a-1", "a-2"), Seq(1L, 1L)), (Seq("a-3", "a-4"), Seq(1L, 1L)))
         .expectComplete()
     }
   }
