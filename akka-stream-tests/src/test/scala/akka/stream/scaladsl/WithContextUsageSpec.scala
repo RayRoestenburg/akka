@@ -195,33 +195,6 @@ object Offset {
 
 case class Offset(value: Int)
 
-object SinkRefs {
-  def createSink[R](testSink: Sink[Committed[R], Probe[Committed[R]]]): Sink[(R, Offset), Probe[Committed[R]]] = {
-    FlowWithContext[Offset, R]
-      .endContextPropagation
-      .statefulMapConcat { () ⇒
-        {
-          var currentOffset = -1
-          var last = Vector.empty[Committed[R]]
-          pair ⇒ {
-            pair match {
-              case (record, offset) ⇒
-                val res = if (currentOffset != -1 && offset.value != currentOffset) {
-                  last
-                } else {
-                  last = Vector(Committed(record, offset.value))
-                  List()
-                }
-                currentOffset = offset.value
-                res
-            }
-          }
-        }
-      }
-      .toMat(testSink)(Keep.right)
-  }
-}
-
 case class Record(key: String, value: String)
 case class Committed[R](record: R, offset: Int)
 case class MultiRecord(records: immutable.Seq[Record])
