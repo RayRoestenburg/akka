@@ -132,7 +132,7 @@ class WithContextUsageSpec extends StreamSpec {
       val f: (Record ⇒ List[Record]) = record ⇒ List(record, record, record)
 
       // the mapConcat creates bigger lists than the groups, which is why all offsets are seen.
-      // (The mapContext selects the largest offset in a group)
+      // (The mapContext selects the last offset in a group)
       val expectedOffsets = testRange.map(ix ⇒ Offset(ix)).init
       val expectedMultiRecords = toRecords(input).flatMap(f).grouped(groupSize).map(l ⇒ MultiRecord(l)).toVector
 
