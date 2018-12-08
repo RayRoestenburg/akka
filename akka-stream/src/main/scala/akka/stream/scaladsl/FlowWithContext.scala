@@ -70,6 +70,7 @@ object FlowWithContext {
     val under = Flow[(In, Ctx)]
     new FlowWithContext[Ctx, In, Ctx, In, akka.NotUsed](under, under.traversalBuilder, under.shape)
   }
+  def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]) = new FlowWithContext(flow, flow.traversalBuilder, flow.shape)
 }
 
 final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](
@@ -87,6 +88,6 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](
 
   override def endContextPropagation: Prov[CtxOut, Out] = underlying
 
-  private[this] def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]) = new FlowWithContext(flow, flow.traversalBuilder, flow.shape)
+  private[this] def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]) = FlowWithContext.from(flow)
 }
 
