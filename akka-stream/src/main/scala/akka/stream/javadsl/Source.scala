@@ -3466,4 +3466,7 @@ final class Source[Out, Mat](delegate: scaladsl.Source[Out, Mat]) extends Graph[
    */
   def log(name: String): javadsl.Source[Out, Mat] =
     this.log(name, ConstantFun.javaIdentityFunction[Out], null)
+
+  def startContextPropagation[Ctx](extractContext: function.Function[Out, Ctx]): SourceWithContext[Ctx, Out, Mat] =
+    new javadsl.SourceWithContext(scaladsl.SourceWithContext(this.asScala).mapContext(extractContext.apply))
 }
