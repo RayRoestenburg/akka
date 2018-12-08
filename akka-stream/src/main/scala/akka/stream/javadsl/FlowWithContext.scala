@@ -76,4 +76,6 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](delegate: scaladsl
       val fun = f.create()
       elem ⇒ Util.immutableSeq(fun(elem))
     })
+
+  def asScala = delegate
 }

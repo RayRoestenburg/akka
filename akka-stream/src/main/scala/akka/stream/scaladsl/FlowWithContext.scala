@@ -93,5 +93,8 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](
   override def endContextPropagation: Prov[CtxOut, Out] = underlying
 
   private[this] def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]) = FlowWithContext.from(flow)
+
+  def asJava[JCtxIn <: CtxIn, JIn <: In, JCtxOut >: CtxOut, JOut >: Out, JMat >: Mat]: javadsl.FlowWithContext[JCtxIn, JIn, JCtxOut, JOut, JMat] =
+    new javadsl.FlowWithContext(this)
 }
 

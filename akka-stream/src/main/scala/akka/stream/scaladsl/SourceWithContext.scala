@@ -43,5 +43,8 @@ final class SourceWithContext[+Ctx, +Out, +Mat](
     val under = underlying.via(f)
     new SourceWithContext[Ctx2, Out2, Mat](under, under.traversalBuilder, under.shape)
   }
+
+  def asJava[JCtx >: Ctx, JOut >: Out, JMat >: Mat]: javadsl.SourceWithContext[JCtx, JOut, JMat] =
+    new javadsl.SourceWithContext(this)
 }
 

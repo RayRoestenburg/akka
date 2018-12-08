@@ -73,4 +73,6 @@ final class SourceWithContext[+Ctx, +Out, +Mat](delegate: scaladsl.SourceWithCon
       val fun = f.create()
       elem ⇒ Util.immutableSeq(fun(elem))
     })
+
+  def asScala = delegate
 }
