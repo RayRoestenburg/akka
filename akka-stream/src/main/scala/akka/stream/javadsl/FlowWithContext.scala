@@ -10,6 +10,7 @@ import akka.stream.impl.LinearTraversalBuilder
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 import java.util.concurrent.CompletionStage
 
 import scala.compat.java8.FutureConverters._
@@ -65,8 +66,12 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](delegate: scaladsl
   def filterNot(p: function.Predicate[Out]): FlowWithContext[CtxIn, In, CtxOut, Out, Mat] =
     new FlowWithContext(delegate.filterNot(p.test))
 
-  def grouped(n: Int): FlowWithContext[CtxIn, In, java.util.List[CtxOut @uncheckedVariance], java.util.List[Out @uncheckedVariance], Mat] =
-    new FlowWithContext(delegate.grouped(n).map(_.asJava)).mapContext(_.asJava)
+  def grouped(n: Int): FlowWithContext[CtxIn, In, java.util.List[CtxOut @uncheckedVariance], java.util.List[Out @uncheckedVariance], Mat] = {
+    val f = new function.Function[immutable.Seq[CtxOut], java.util.List[CtxOut]] {
+      def apply(ctxs: immutable.Seq[CtxOut]) = ctxs.asJava
+    }
+    new FlowWithContext(delegate.grouped(n).map(_.asJava)).mapContext(f)
+  }
 
   def mapConcat[Out2](f: function.Function[Out, _ <: java.lang.Iterable[Out2]]): FlowWithContext[CtxIn, In, CtxOut, Out2, Mat] =
     new FlowWithContext(delegate.mapConcat(elem ⇒ Util.immutableSeq(f.apply(elem))))
