@@ -1,9 +1,10 @@
 /*
- * Copyright (C) 2014-2018 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2014-2019 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.stream.javadsl
 
+import akka.annotation.ApiMayChange
 import akka.japi.{ Pair, Util, function }
 import akka.stream._
 import akka.stream.impl.LinearTraversalBuilder
@@ -15,6 +16,10 @@ import java.util.concurrent.CompletionStage
 
 import scala.compat.java8.FutureConverters._
 
+/**
+ * API MAY CHANGE
+ */
+@ApiMayChange
 object SourceWithContext {
   def from[Out, Mat](underlying: Source[Out, Mat]): SourceWithContext[Out, Out, Mat] = {
     new SourceWithContext(scaladsl.SourceWithContext(underlying.asScala))
@@ -25,6 +30,10 @@ object SourceWithContext {
   }
 }
 
+/**
+ * API MAY CHANGE
+ */
+@ApiMayChange
 final class SourceWithContext[+Ctx, +Out, +Mat](delegate: scaladsl.SourceWithContext[Ctx, Out, Mat]) extends Graph[SourceShape[(Out, Ctx)], Mat] {
   override val traversalBuilder: LinearTraversalBuilder = delegate.traversalBuilder
   override val shape: SourceShape[(Out, Ctx)] = delegate.shape

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2014-2019 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.stream.scaladsl
@@ -10,10 +10,15 @@ import scala.language.higherKinds
 import scala.annotation.unchecked.uncheckedVariance
 
 import akka.NotUsed
+import akka.annotation.ApiMayChange
 import akka.dispatch.ExecutionContexts
 import akka.stream._
 import akka.stream.impl.LinearTraversalBuilder
 
+/**
+ * API MAY CHANGE
+ */
+@ApiMayChange
 trait FlowWithContextOps[+Ctx, +Out, +Mat] {
   type Repr[+C, +O] <: FlowWithContextOps[C, O, Mat] {
     type Repr[+CC, +OO] = FlowWithContextOps.this.Repr[CC, OO]
@@ -47,6 +52,12 @@ trait FlowWithContextOps[+Ctx, +Out, +Mat] {
       (els, ctxs)
     })
 
+  def sliding(n: Int, step: Int = 1): Repr[immutable.Seq[Ctx], immutable.Seq[Out]] =
+    via(flow.sliding(n, step).map { elsWithContext ⇒
+      val (els, ctxs) = elsWithContext.unzip
+      (els, ctxs)
+    })
+
   def mapConcat[Out2](f: Out ⇒ immutable.Iterable[Out2]): Repr[Ctx, Out2] = statefulMapConcat(() ⇒ f)
 
   def statefulMapConcat[Out2](f: () ⇒ Out ⇒ immutable.Iterable[Out2]): Repr[Ctx, Out2] = {
@@ -65,6 +76,10 @@ trait FlowWithContextOps[+Ctx, +Out, +Mat] {
   private[akka] def flow[T, C]: Flow[(T, C), (T, C), NotUsed] = Flow[(T, C)]
 }
 
+/**
+ * API MAY CHANGE
+ */
+@ApiMayChange
 object FlowWithContext {
   def apply[Ctx, In]: FlowWithContext[Ctx, In, Ctx, In, akka.NotUsed] = {
     val under = Flow[(In, Ctx)]
@@ -73,6 +88,10 @@ object FlowWithContext {
   def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]) = new FlowWithContext(flow, flow.traversalBuilder, flow.shape)
 }
 
+/**
+ * API MAY CHANGE
+ */
+@ApiMayChange
 final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](
   underlying:                    Flow[(In, CtxIn), (Out, CtxOut), Mat],
   override val traversalBuilder: LinearTraversalBuilder,

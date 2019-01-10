@@ -1,14 +1,19 @@
 /*
- * Copyright (C) 2014-2018 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2014-2019 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.stream.scaladsl
 
 import scala.annotation.unchecked.uncheckedVariance
 
+import akka.annotation.ApiMayChange
 import akka.stream._
 import akka.stream.impl.LinearTraversalBuilder
 
+/**
+ * API MAY CHANGE
+ */
+@ApiMayChange
 object SourceWithContext {
   def apply[Out, Mat](underlying: Source[Out, Mat]): SourceWithContext[Out, Out, Mat] = {
     val under = underlying.map(e ⇒ (e, e))
@@ -19,6 +24,10 @@ object SourceWithContext {
   }
 }
 
+/**
+ * API MAY CHANGE
+ */
+@ApiMayChange
 final class SourceWithContext[+Ctx, +Out, +Mat](
   underlying:                    Source[(Out, Ctx), Mat],
   override val traversalBuilder: LinearTraversalBuilder,
