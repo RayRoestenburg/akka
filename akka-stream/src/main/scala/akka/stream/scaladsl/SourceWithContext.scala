@@ -39,7 +39,10 @@ final class SourceWithContext[+Ctx, +Out, +Mat](
   override type Repr[+C, +O] = SourceWithContext[C, O, Mat @uncheckedVariance]
   override type Prov[+C, +O] = Source[(O, C), Mat @uncheckedVariance]
 
-  override def via[Ctx2, Out2, Mat2](viaFlow: Graph[FlowShape[(Out, Ctx), (Out2, Ctx2)], Mat2]): Repr[Ctx2, Out2] = from(flow.via(viaFlow))
+  override def via[Ctx2, Out2, Mat2](viaFlow: Graph[FlowShape[(Out, Ctx), (Out2, Ctx2)], Mat2]): Repr[Ctx2, Out2] = {
+    val under = underlying.via(viaFlow)
+    new SourceWithContext[Ctx2, Out2, Mat](under, under.traversalBuilder, under.shape)
+  }
 
   def to[Mat2](sink: Graph[SinkShape[(Out, Ctx)], Mat2]): RunnableGraph[Mat] = underlying.toMat(sink)(Keep.left)
 
@@ -47,11 +50,6 @@ final class SourceWithContext[+Ctx, +Out, +Mat](
     underlying.toMat(sink)(combine)
 
   override def endContextPropagation: Prov[Ctx, Out] = underlying
-
-  private[this] def from[Out2, Ctx2](f: Flow[(Out, Ctx), (Out2, Ctx2), Any]): Repr[Ctx2, Out2] = {
-    val under = underlying.via(f)
-    new SourceWithContext[Ctx2, Out2, Mat](under, under.traversalBuilder, under.shape)
-  }
 
   def asJava[JCtx >: Ctx, JOut >: Out, JMat >: Mat]: javadsl.SourceWithContext[JCtx, JOut, JMat] =
     new javadsl.SourceWithContext(this)
