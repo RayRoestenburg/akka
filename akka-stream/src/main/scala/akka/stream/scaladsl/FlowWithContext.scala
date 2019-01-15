@@ -25,10 +25,7 @@ import akka.stream.impl.LinearTraversalBuilder
 trait FlowWithContextOps[+Ctx, +Out, +Mat] {
   type Repr[+C, +O] <: FlowWithContextOps[C, O, Mat] {
     type Repr[+CC, +OO] = FlowWithContextOps.this.Repr[CC, OO]
-    type Prov[+CC, +OO] = FlowWithContextOps.this.Prov[CC, OO]
   }
-
-  type Prov[+C, +O] <: FlowOpsMat[(O, C), Mat]
 
   /**
    * Transform this flow by the regular flow. The given flow must support manual context propagation by
@@ -185,8 +182,6 @@ trait FlowWithContextOps[+Ctx, +Out, +Mat] {
   def mapContext[Ctx2](f: Ctx ⇒ Ctx2): Repr[Ctx2, Out] =
     via(flow.map { case (e, ctx) ⇒ (e, f(ctx)) })
 
-  def endContextPropagation: Prov[Ctx, Out]
-
   private[akka] def flow[T, C]: Flow[(T, C), (T, C), NotUsed] = Flow[(T, C)]
 }
 
@@ -215,7 +210,6 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](
   override def withAttributes(attr: Attributes): Repr[CtxOut, Out] = new FlowWithContext(underlying, traversalBuilder.setAttributes(attr), shape)
 
   override type Repr[+C, +O] = FlowWithContext[CtxIn @uncheckedVariance, In @uncheckedVariance, C, O, Mat @uncheckedVariance]
-  override type Prov[+C, +O] = Flow[(In @uncheckedVariance, CtxIn @uncheckedVariance), (O, C), Mat @uncheckedVariance]
 
   override def via[Ctx2, Out2, Mat2](viaFlow: Graph[FlowShape[(Out, CtxOut), (Out2, Ctx2)], Mat2]): Repr[Ctx2, Out2] = from(underlying.via(viaFlow))
 
@@ -223,7 +217,7 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](
 
   def toMat[Mat2, Mat3](sink: Graph[SinkShape[(Out, CtxOut)], Mat2])(combine: (Mat, Mat2) ⇒ Mat3): Sink[(In, CtxIn), Mat3] = underlying.toMat(sink)(combine)
 
-  override def endContextPropagation: Prov[CtxOut, Out] = underlying
+  def asFlow: Flow[(In, CtxIn), (Out, CtxOut), Mat] = underlying
 
   private[this] def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]) = FlowWithContext.from(flow)
 
