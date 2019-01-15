@@ -43,20 +43,14 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](delegate: scaladsl
   }
 
   def via[CtxOut2, Out2, Mat2](viaFlow: Graph[FlowShape[Pair[Out @uncheckedVariance, CtxOut @uncheckedVariance], Pair[Out2, CtxOut2]], Mat2]): FlowWithContext[CtxIn, In, CtxOut2, Out2, Mat] = {
-    val under = endContextPropagation().via(viaFlow)
+    val under = asFlow().via(viaFlow)
     FlowWithContext.fromPairs(under)
   }
 
-  def to[Mat2](sink: Graph[SinkShape[Pair[Out @uncheckedVariance, CtxOut @uncheckedVariance]], Mat2]): Sink[Pair[In, CtxIn], Mat] @uncheckedVariance =
-    endContextPropagation().toMat(sink, Keep.left)
-
-  def toMat[Mat2, Mat3](sink: Graph[SinkShape[Pair[Out @uncheckedVariance, CtxOut @uncheckedVariance]], Mat2], combine: function.Function2[Mat, Mat2, Mat3]): Sink[Pair[In, CtxIn], Mat3] @uncheckedVariance =
-    endContextPropagation().toMat(sink, combine)
-
-  def endContextPropagation(): Flow[Pair[In, CtxIn], Pair[Out, CtxOut], Mat] @uncheckedVariance =
+  def asFlow(): Flow[Pair[In, CtxIn], Pair[Out, CtxOut], Mat] @uncheckedVariance =
     scaladsl.Flow[Pair[In, CtxIn]]
       .map(_.toScala)
-      .viaMat(delegate.endContextPropagation)(scaladsl.Keep.right)
+      .viaMat(delegate.asFlow)(scaladsl.Keep.right)
       .map { case (o, c) ⇒ Pair(o, c) }
       .asJava
 

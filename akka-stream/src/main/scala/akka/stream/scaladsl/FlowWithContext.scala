@@ -213,10 +213,6 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](
 
   override def via[Ctx2, Out2, Mat2](viaFlow: Graph[FlowShape[(Out, CtxOut), (Out2, Ctx2)], Mat2]): Repr[Ctx2, Out2] = from(underlying.via(viaFlow))
 
-  def to[Mat2](sink: Graph[SinkShape[(Out, CtxOut)], Mat2]): Sink[(In, CtxIn), Mat] = underlying.toMat(sink)(Keep.left)
-
-  def toMat[Mat2, Mat3](sink: Graph[SinkShape[(Out, CtxOut)], Mat2])(combine: (Mat, Mat2) ⇒ Mat3): Sink[(In, CtxIn), Mat3] = underlying.toMat(sink)(combine)
-
   def asFlow: Flow[(In, CtxIn), (Out, CtxOut), Mat] = underlying
 
   private[this] def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]) = FlowWithContext.from(flow)
