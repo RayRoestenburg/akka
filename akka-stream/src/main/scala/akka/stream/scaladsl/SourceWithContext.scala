@@ -36,12 +36,13 @@ final class SourceWithContext[+Ctx, +Out, +Mat](
 
   override def withAttributes(attr: Attributes): Repr[Ctx, Out] = new SourceWithContext(underlying, traversalBuilder.setAttributes(attr), shape)
 
-  override type Repr[+C, +O] = SourceWithContext[C, O, Mat @uncheckedVariance]
+  override type ReprMat[+C, +O, +M] = SourceWithContext[C, O, M @uncheckedVariance]
 
-  override def via[Ctx2, Out2, Mat2](viaFlow: Graph[FlowShape[(Out, Ctx), (Out2, Ctx2)], Mat2]): Repr[Ctx2, Out2] = {
-    val under = underlying.via(viaFlow)
-    new SourceWithContext[Ctx2, Out2, Mat](under, under.traversalBuilder, under.shape)
-  }
+  override def via[Ctx2, Out2, Mat2](viaFlow: Graph[FlowShape[(Out, Ctx), (Out2, Ctx2)], Mat2]): Repr[Ctx2, Out2] =
+    SourceWithContext.from(underlying.via(viaFlow))
+
+  override def viaMat[Ctx2, Out2, Mat2, Mat3](flow: Graph[FlowShape[(Out, Ctx), (Out2, Ctx2)], Mat2])(combine: (Mat, Mat2) ⇒ Mat3): SourceWithContext[Ctx2, Out2, Mat3] =
+    SourceWithContext.from(underlying.viaMat(flow)(combine))
 
   def to[Mat2](sink: Graph[SinkShape[(Out, Ctx)], Mat2]): RunnableGraph[Mat] = underlying.toMat(sink)(Keep.left)
 

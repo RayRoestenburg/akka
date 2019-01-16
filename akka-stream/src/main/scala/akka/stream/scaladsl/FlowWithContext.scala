@@ -23,9 +23,10 @@ import akka.stream.impl.LinearTraversalBuilder
  */
 @ApiMayChange
 trait FlowWithContextOps[+Ctx, +Out, +Mat] {
-  type Repr[+C, +O] <: FlowWithContextOps[C, O, Mat] {
-    type Repr[+CC, +OO] = FlowWithContextOps.this.Repr[CC, OO]
+  type ReprMat[+C, +O, +M] <: FlowWithContextOps[C, O, M] {
+    type ReprMat[+CC, +OO, +MatMat] = FlowWithContextOps.this.ReprMat[CC, OO, MatMat]
   }
+  type Repr[+C, +O] = ReprMat[C, O, Mat @uncheckedVariance]
 
   /**
    * Transform this flow by the regular flow. The given flow must support manual context propagation by
@@ -37,6 +38,20 @@ trait FlowWithContextOps[+Ctx, +Out, +Mat] {
    * @see [[akka.stream.scaladsl.FlowOps.via]]
    */
   def via[Ctx2, Out2, Mat2](flow: Graph[FlowShape[(Out, Ctx), (Out2, Ctx2)], Mat2]): Repr[Ctx2, Out2]
+
+  /**
+   * Transform this flow by the regular flow. The given flow must support manual context propagation by
+   * taking and producing tuples of (data, context).
+   *
+   * This can be used as an escape hatch for operations that are not (yet) provided with automatic
+   * context propagation here.
+   *
+   * The `combine` function is used to compose the materialized values of this flow and that
+   * flow into the materialized value of the resulting Flow.
+   *
+   * @see [[akka.stream.scaladsl.FlowOps.viaMat]]
+   */
+  def viaMat[Ctx2, Out2, Mat2, Mat3](flow: Graph[FlowShape[(Out, Ctx), (Out2, Ctx2)], Mat2])(combine: (Mat, Mat2) ⇒ Mat3): ReprMat[Ctx2, Out2, Mat3]
 
   /**
    * Context-preserving variant of [[akka.stream.scaladsl.FlowOps.map]].
@@ -209,13 +224,14 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](
 
   override def withAttributes(attr: Attributes): Repr[CtxOut, Out] = new FlowWithContext(underlying, traversalBuilder.setAttributes(attr), shape)
 
-  override type Repr[+C, +O] = FlowWithContext[CtxIn @uncheckedVariance, In @uncheckedVariance, C, O, Mat @uncheckedVariance]
+  override type ReprMat[+C, +O, +M] = FlowWithContext[CtxIn @uncheckedVariance, In @uncheckedVariance, C, O, M @uncheckedVariance]
 
-  override def via[Ctx2, Out2, Mat2](viaFlow: Graph[FlowShape[(Out, CtxOut), (Out2, Ctx2)], Mat2]): Repr[Ctx2, Out2] = from(underlying.via(viaFlow))
+  override def via[Ctx2, Out2, Mat2](viaFlow: Graph[FlowShape[(Out, CtxOut), (Out2, Ctx2)], Mat2]): Repr[Ctx2, Out2] =
+    FlowWithContext.from(underlying.via(viaFlow))
+  override def viaMat[Ctx2, Out2, Mat2, Mat3](flow: Graph[FlowShape[(Out, CtxOut), (Out2, Ctx2)], Mat2])(combine: (Mat, Mat2) ⇒ Mat3): FlowWithContext[CtxIn, In, Ctx2, Out2, Mat3] =
+    FlowWithContext.from(underlying.viaMat(flow)(combine))
 
   def asFlow: Flow[(In, CtxIn), (Out, CtxOut), Mat] = underlying
-
-  private[this] def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]) = FlowWithContext.from(flow)
 
   def asJava[JCtxIn <: CtxIn, JIn <: In, JCtxOut >: CtxOut, JOut >: Out, JMat >: Mat]: javadsl.FlowWithContext[JCtxIn, JIn, JCtxOut, JOut, JMat] =
     new javadsl.FlowWithContext(this)
