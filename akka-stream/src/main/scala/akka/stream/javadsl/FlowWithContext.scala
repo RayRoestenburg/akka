@@ -28,6 +28,13 @@ object FlowWithContext {
 }
 
 /**
+ * A flow that provides operations which automatically propagate the context of an element.
+ * Only a subset of common operations from [[Flow]] is supported. As an escape hatch you can
+ * use [[FlowWithContext.via]] to manually provide the context propagation for otherwise unsupported
+ * operations.
+ *
+ * An "empty" flow can be created by calling `FlowWithContext[Ctx, T]`.
+ *
  * API MAY CHANGE
  */
 @ApiMayChange

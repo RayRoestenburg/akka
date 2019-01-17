@@ -15,6 +15,13 @@ import java.util.concurrent.CompletionStage
 import scala.compat.java8.FutureConverters._
 
 /**
+ * A source that provides operations which automatically propagate the context of an element.
+ * Only a subset of common operations from [[Source]] is supported. As an escape hatch you can
+ * use [[SourceWithContext.via]] to manually provide the context propagation for otherwise unsupported
+ * operations.
+ *
+ * Can be created by calling [[Source.startContextPropagation()]]
+ *
  * API MAY CHANGE
  */
 @ApiMayChange
