@@ -25,7 +25,7 @@ final class SourceWithContext[+Ctx, +Out, +Mat](delegate: scaladsl.SourceWithCon
   def endContextPropagation(): Source[Pair[Out @uncheckedVariance, Ctx @uncheckedVariance], Mat @uncheckedVariance] =
     delegate.endContextPropagation.map { case (o, c) ⇒ Pair(o, c) }.asJava
 
-  // operations in alphabetic order
+  // remaining operations in alphabetic order
 
   def collect[Out2](pf: PartialFunction[Out, Out2]): SourceWithContext[Ctx, Out2, Mat] =
     viaScala(_.collect(pf))
@@ -60,5 +60,5 @@ final class SourceWithContext[+Ctx, +Out, +Mat](delegate: scaladsl.SourceWithCon
   def asScala: scaladsl.SourceWithContext[Ctx, Out, Mat] = delegate
 
   private[this] def viaScala[Ctx2, Out2, Mat2](f: scaladsl.SourceWithContext[Ctx, Out, Mat] ⇒ scaladsl.SourceWithContext[Ctx2, Out2, Mat2]): SourceWithContext[Ctx2, Out2, Mat2] =
-    new SourceWithContext[Ctx2, Out2, Mat2](f(delegate))
+    new SourceWithContext(f(delegate))
 }
