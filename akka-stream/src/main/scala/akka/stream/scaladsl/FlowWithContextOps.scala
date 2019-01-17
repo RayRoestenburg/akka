@@ -149,6 +149,7 @@ trait FlowWithContextOps[+Ctx, +Out, +Mat] {
    * ("a", 1)
    * ("b", 2)
    * ("b", 2)
+   * ```
    *
    * @see [[akka.stream.scaladsl.FlowOps.mapConcat]]
    */
@@ -178,6 +179,7 @@ trait FlowWithContextOps[+Ctx, +Out, +Mat] {
    * ("a", 1)
    * ("b", 2)
    * ("b", 2)
+   * ```
    *
    * @see [[akka.stream.scaladsl.FlowOps.statefulMapConcat]]
    */

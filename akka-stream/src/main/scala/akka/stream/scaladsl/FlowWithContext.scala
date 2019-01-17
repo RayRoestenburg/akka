@@ -13,11 +13,17 @@ import akka.stream._
  */
 @ApiMayChange
 object FlowWithContext {
+  /**
+   * Creates an "empty" FlowWithContext that passes elements through with their context unchanged.
+   */
   def apply[Ctx, In]: FlowWithContext[Ctx, In, Ctx, In, akka.NotUsed] = {
     val under = Flow[(In, Ctx)]
     new FlowWithContext[Ctx, In, Ctx, In, akka.NotUsed](under)
   }
-  def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]) = new FlowWithContext(flow)
+  /**
+   * Creates a FlowWithContext from a regular flow that operates on a pair of `(data, context)` elements.
+   */
+  def from[CI, I, CO, O, M](flow: Flow[(I, CI), (O, CO), M]): FlowWithContext[CI, I, CO, O, M] = new FlowWithContext(flow)
 }
 
 /**
