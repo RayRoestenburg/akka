@@ -7,7 +7,6 @@ package akka.stream.javadsl
 import akka.annotation.ApiMayChange
 import akka.japi.{ Pair, Util, function }
 import akka.stream._
-import akka.stream.impl.LinearTraversalBuilder
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.JavaConverters._
@@ -34,11 +33,7 @@ object SourceWithContext {
  * API MAY CHANGE
  */
 @ApiMayChange
-final class SourceWithContext[+Ctx, +Out, +Mat](delegate: scaladsl.SourceWithContext[Ctx, Out, Mat]) extends Graph[SourceShape[(Out, Ctx)], Mat] {
-  override val traversalBuilder: LinearTraversalBuilder = delegate.traversalBuilder
-  override val shape: SourceShape[(Out, Ctx)] = delegate.shape
-  override def withAttributes(attr: Attributes): SourceWithContext[Ctx, Out, Mat] = new SourceWithContext(delegate.withAttributes(attr))
-
+final class SourceWithContext[+Ctx, +Out, +Mat](delegate: scaladsl.SourceWithContext[Ctx, Out, Mat]) extends GraphDelegate(delegate) {
   def mapContext[Ctx2](extractContext: function.Function[Ctx, Ctx2]): SourceWithContext[Ctx2, Out, Mat] = {
     new SourceWithContext(delegate.mapContext(extractContext.apply))
   }

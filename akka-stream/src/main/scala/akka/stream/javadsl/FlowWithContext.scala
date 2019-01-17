@@ -7,7 +7,6 @@ package akka.stream.javadsl
 import akka.annotation.ApiMayChange
 import akka.japi.{ Pair, Util, function }
 import akka.stream._
-import akka.stream.impl.LinearTraversalBuilder
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.JavaConverters._
@@ -33,11 +32,7 @@ object FlowWithContext {
  * API MAY CHANGE
  */
 @ApiMayChange
-final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](delegate: scaladsl.FlowWithContext[CtxIn, In, CtxOut, Out, Mat]) extends Graph[FlowShape[(In, CtxIn), (Out, CtxOut)], Mat] {
-  override val traversalBuilder: LinearTraversalBuilder = delegate.traversalBuilder
-  override val shape: FlowShape[(In, CtxIn), (Out, CtxOut)] = delegate.shape
-  override def withAttributes(attr: Attributes): FlowWithContext[CtxIn, In, CtxOut, Out, Mat] = new FlowWithContext(delegate.withAttributes(attr))
-
+final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](delegate: scaladsl.FlowWithContext[CtxIn, In, CtxOut, Out, Mat]) extends GraphDelegate(delegate) {
   def mapContext[CtxOut2](extractContext: function.Function[CtxOut, CtxOut2]): FlowWithContext[CtxIn, In, CtxOut2, Out, Mat] = {
     new FlowWithContext(delegate.mapContext(extractContext.apply))
   }
