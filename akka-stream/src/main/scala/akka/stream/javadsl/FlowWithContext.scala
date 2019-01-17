@@ -10,7 +10,6 @@ import akka.stream._
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 import java.util.concurrent.CompletionStage
 
 import scala.compat.java8.FutureConverters._
@@ -23,7 +22,7 @@ object FlowWithContext {
   def create[Ctx, In](): FlowWithContext[Ctx, In, Ctx, In, akka.NotUsed] = {
     new FlowWithContext(scaladsl.FlowWithContext[Ctx, In])
   }
-  def fromPairs[CtxIn, In, CtxOut, Out, Mat](under: Flow[Pair[In, CtxIn], Pair[Out, CtxOut], Mat]) = {
+  def fromPairs[CtxIn, In, CtxOut, Out, Mat](under: Flow[Pair[In, CtxIn], Pair[Out, CtxOut], Mat]): FlowWithContext[CtxIn, In, CtxOut, Out, Mat] = {
     new FlowWithContext(scaladsl.FlowWithContext.from(scaladsl.Flow[(In, CtxIn)].map { case (i, c) ⇒ Pair(i, c) }.viaMat(under.asScala.map(_.toScala))(scaladsl.Keep.right)))
   }
 }
@@ -64,12 +63,8 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](delegate: scaladsl
   def filterNot(p: function.Predicate[Out]): FlowWithContext[CtxIn, In, CtxOut, Out, Mat] =
     new FlowWithContext(delegate.filterNot(p.test))
 
-  def grouped(n: Int): FlowWithContext[CtxIn, In, java.util.List[CtxOut @uncheckedVariance], java.util.List[Out @uncheckedVariance], Mat] = {
-    val f = new function.Function[immutable.Seq[CtxOut], java.util.List[CtxOut]] {
-      def apply(ctxs: immutable.Seq[CtxOut]) = ctxs.asJava
-    }
-    new FlowWithContext(delegate.grouped(n).map(_.asJava)).mapContext(f)
-  }
+  def grouped(n: Int): FlowWithContext[CtxIn, In, java.util.List[CtxOut @uncheckedVariance], java.util.List[Out @uncheckedVariance], Mat] =
+    new FlowWithContext(delegate.grouped(n).map(_.asJava)).mapContext(_.asJava)
 
   def mapConcat[Out2](f: function.Function[Out, _ <: java.lang.Iterable[Out2]]): FlowWithContext[CtxIn, In, CtxOut, Out2, Mat] =
     new FlowWithContext(delegate.mapConcat(elem ⇒ Util.immutableSeq(f.apply(elem))))
@@ -80,12 +75,8 @@ final class FlowWithContext[-CtxIn, -In, +CtxOut, +Out, +Mat](delegate: scaladsl
       elem ⇒ Util.immutableSeq(fun(elem))
     })
 
-  def sliding(n: Int, step: Int = 1): FlowWithContext[CtxIn, In, java.util.List[CtxOut @uncheckedVariance], java.util.List[Out @uncheckedVariance], Mat] = {
-    val f = new function.Function[immutable.Seq[CtxOut], java.util.List[CtxOut]] {
-      def apply(ctxs: immutable.Seq[CtxOut]) = ctxs.asJava
-    }
-    new FlowWithContext(delegate.sliding(n, step).map(_.asJava)).mapContext(f)
-  }
+  def sliding(n: Int, step: Int = 1): FlowWithContext[CtxIn, In, java.util.List[CtxOut @uncheckedVariance], java.util.List[Out @uncheckedVariance], Mat] =
+    new FlowWithContext(delegate.sliding(n, step).map(_.asJava)).mapContext(_.asJava)
 
-  def asScala = delegate
+  def asScala: scaladsl.FlowWithContext[CtxIn, In, CtxOut, Out, Mat] = delegate
 }

@@ -10,7 +10,6 @@ import akka.stream._
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 import java.util.concurrent.CompletionStage
 
 import scala.compat.java8.FutureConverters._
@@ -61,13 +60,8 @@ final class SourceWithContext[+Ctx, +Out, +Mat](delegate: scaladsl.SourceWithCon
   def filterNot(p: function.Predicate[Out]): SourceWithContext[Ctx, Out, Mat] =
     new SourceWithContext(delegate.filterNot(p.test))
 
-  def grouped(n: Int): SourceWithContext[java.util.List[Ctx @uncheckedVariance], java.util.List[Out @uncheckedVariance], Mat] = {
-    val f = new function.Function[immutable.Seq[Ctx], java.util.List[Ctx]] {
-      def apply(ctxs: immutable.Seq[Ctx]) = ctxs.asJava
-    }
-
-    new SourceWithContext(delegate.grouped(n).map(_.asJava)).mapContext(f)
-  }
+  def grouped(n: Int): SourceWithContext[java.util.List[Ctx @uncheckedVariance], java.util.List[Out @uncheckedVariance], Mat] =
+    new SourceWithContext(delegate.grouped(n).map(_.asJava)).mapContext(_.asJava)
 
   def mapConcat[Out2](f: function.Function[Out, _ <: java.lang.Iterable[Out2]]): SourceWithContext[Ctx, Out2, Mat] =
     new SourceWithContext(delegate.mapConcat(elem ⇒ Util.immutableSeq(f.apply(elem))))
@@ -78,5 +72,5 @@ final class SourceWithContext[+Ctx, +Out, +Mat](delegate: scaladsl.SourceWithCon
       elem ⇒ Util.immutableSeq(fun(elem))
     })
 
-  def asScala = delegate
+  def asScala: scaladsl.SourceWithContext[Ctx, Out, Mat] = delegate
 }
