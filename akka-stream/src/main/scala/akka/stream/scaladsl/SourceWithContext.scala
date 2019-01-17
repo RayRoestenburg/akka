@@ -39,11 +39,6 @@ final class SourceWithContext[+Ctx, +Out, +Mat](
   override def viaMat[Ctx2, Out2, Mat2, Mat3](flow: Graph[FlowShape[(Out, Ctx), (Out2, Ctx2)], Mat2])(combine: (Mat, Mat2) ⇒ Mat3): SourceWithContext[Ctx2, Out2, Mat3] =
     SourceWithContext.from(delegate.viaMat(flow)(combine))
 
-  def to[Mat2](sink: Graph[SinkShape[(Out, Ctx)], Mat2]): RunnableGraph[Mat] = delegate.toMat(sink)(Keep.left)
-
-  def toMat[Mat2, Mat3](sink: Graph[SinkShape[(Out, Ctx)], Mat2])(combine: (Mat, Mat2) ⇒ Mat3): RunnableGraph[Mat3] =
-    delegate.toMat(sink)(combine)
-
   /**
    * Stops automatic context propagation from here and converts this to a regular
    * stream of a pair of (data, context).

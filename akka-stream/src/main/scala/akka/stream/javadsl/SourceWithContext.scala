@@ -43,12 +43,6 @@ final class SourceWithContext[+Ctx, +Out, +Mat](delegate: scaladsl.SourceWithCon
     SourceWithContext.fromPairs(under)
   }
 
-  def to[Mat2](sink: Graph[SinkShape[Pair[Out @uncheckedVariance, Ctx @uncheckedVariance]], Mat2]): RunnableGraph[Mat] =
-    endContextPropagation().toMat(sink, Keep.left)
-
-  def toMat[Mat2, Mat3](sink: Graph[SinkShape[Pair[Out @uncheckedVariance, Ctx @uncheckedVariance]], Mat2], combine: function.Function2[Mat, Mat2, Mat3]): RunnableGraph[Mat3] =
-    endContextPropagation().toMat(sink, combine)
-
   def endContextPropagation(): Source[Pair[Out @uncheckedVariance, Ctx @uncheckedVariance], Mat @uncheckedVariance] =
     delegate.endContextPropagation.map { case (o, c) ⇒ Pair(o, c) }.asJava
 
